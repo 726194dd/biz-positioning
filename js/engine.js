@@ -75,10 +75,16 @@
     return codes.slice(0, n);
   }
 
-  function scoreAttempt(answers) {
+  function scoreAttempt(answers, onlyIds) {
     var map = byId();
+    var allow = null;
+    if (onlyIds && onlyIds.length) {
+      allow = {};
+      onlyIds.forEach(function (id) { allow[id] = 1; });
+    }
     var buckets = { A: [], B: [], C: [], D: [] };
     root.BIZ_QUESTIONS.forEach(function (q) {
+      if (allow && !allow[q.id]) return;
       var p = polarity(q, answers[q.id]);
       if (p === null || p === undefined || isNaN(p)) {
         throw new Error("missing answer " + q.id);
@@ -87,7 +93,8 @@
     });
     var scores = {};
     ["A", "B", "C", "D"].forEach(function (k) {
-      if (buckets[k].length !== 15) throw new Error("axis " + k + " has " + buckets[k].length);
+      if (!buckets[k].length) throw new Error("axis " + k + " has 0");
+      if (!allow && buckets[k].length !== 15) throw new Error("axis " + k + " has " + buckets[k].length);
       var sum = buckets[k].reduce(function (a, b) { return a + b; }, 0);
       scores[k] = round1((sum / buckets[k].length) * 100);
     });
@@ -99,8 +106,11 @@
     });
     var contradictions = 0;
     PAIRS.forEach(function (pair) {
-      var d = Math.abs(polarity(map[pair[0]], answers[pair[0]]) - polarity(map[pair[1]], answers[pair[1]]));
-      if (d >= 0.75) contradictions += 1;
+      if (allow && (!allow[pair[0]] || !allow[pair[1]])) return;
+      var left = polarity(map[pair[0]], answers[pair[0]]);
+      var right = polarity(map[pair[1]], answers[pair[1]]);
+      if (left === null || right === null) return;
+      if (Math.abs(left - right) >= 0.75) contradictions += 1;
     });
     var code = codeFrom(scores);
     var near = nearest(scores, 3);

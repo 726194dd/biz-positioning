@@ -17,7 +17,8 @@
     copied: "",
     confirmRetake: false,
     profileStep: 0,
-    resumeAt: 0
+    resumeAt: 0,
+    pendingForm: ""
   };
 
   var qmap = {};
@@ -39,7 +40,8 @@
       display: {},
       answers: {},
       result: null,
-      prev: null
+      prev: null,
+      form: ""
     };
   }
 
@@ -76,6 +78,7 @@
     if (!state.order) return list;
     window.BIZ_SECTIONS.forEach(function (sec) {
       var ids = state.order.filter(function (id) { return qmap[id] && qmap[id].section === sec.id; });
+      if (!ids.length) return;
       list.push({ kind: "section", section: sec });
       ids.forEach(function (id, i) {
         list.push({ kind: "question", id: id, indexInSection: i, sectionSize: ids.length, section: sec });
@@ -85,9 +88,15 @@
     return list;
   }
 
+  function formIds(form) {
+    if (form === "30") return window.BIZ_SHORT.slice();
+    return window.BIZ_QUESTIONS.map(function (q) { return q.id; });
+  }
+
   function answeredCount() {
+    var ids = state.order || [];
     var n = 0;
-    window.BIZ_QUESTIONS.forEach(function (q) { if (isAnswered(q)) n += 1; });
+    ids.forEach(function (id) { if (qmap[id] && isAnswered(qmap[id])) n += 1; });
     return n;
   }
 
@@ -174,10 +183,10 @@
   }
 
   function setTitle(arch, mixed) {
-    var title = arch ? ((mixed ? "我最接近" : "我是") + arch.name + "｜商业定位") : "商业定位｜测测你的商业价值与变现方向";
+    var title = arch ? ((mixed ? "我最接近" : "我是") + arch.name + "｜商业人格") : "你是哪一种商业人格";
     document.title = title;
     var theme = document.querySelector('meta[name="theme-color"]');
-    if (theme) theme.setAttribute("content", "#F7F6FB");
+    if (theme) theme.setAttribute("content", arch ? "#F7F6FB" : "#FFE4EF");
   }
 
   var LETTER = { B: "建造", C: "连接", M: "使命", K: "市场", D: "深度", G: "广度", F: "快迭代", S: "慢深耕" };
@@ -247,31 +256,76 @@
     }
   }
 
+  var POLE_LETTER = { A: ["B", "C"], B: ["M", "K"], C: ["D", "G"], D: ["F", "S"] };
+  var DIM_NO = ["一", "二", "三", "四"];
+
+  function planCard(form, spec) {
+    var same = state.form === form && state.order && !state.result && answeredCount() > 0;
+    var label = same ? "继续作答" : (state.result ? "再测一次" : spec.cta);
+    var act = same ? "resume" : "start";
+    var extra = same ? "" : ' data-form="' + form + '"';
+    var note = same ? '<p class="ver-note">上次答到 ' + answeredCount() + ' / ' + state.order.length + '</p>' : "";
+    return '<article class="ver ' + spec.kind + '">' +
+      '<div class="ver-top"><h3>' + spec.name + (spec.badge ? "<em>" + spec.badge + "</em>" : "") + '</h3><span>' + spec.time + '</span></div>' +
+      '<p class="ver-count">' + spec.count + '</p>' +
+      '<p>' + spec.desc + '</p>' + note +
+      '<button type="button" class="btn ' + spec.btn + '" data-act="' + act + '"' + extra + '>' + label + '</button></article>';
+  }
+
   function renderCover() {
-    var progress = state.order && answeredCount() > 0 && !state.result;
-    var done = !!state.result;
-    var buttons = "";
-    if (progress) {
-      buttons = '<button type="button" class="btn" data-act="resume">继续测试</button><button type="button" class="btn ghost" data-act="restart">重新开始</button>';
-    } else if (done) {
-      buttons = '<button type="button" class="btn" data-act="saved">查看我的结果</button><button type="button" class="btn ghost" data-act="restart">重新测试</button>';
-    } else {
-      buttons = '<button type="button" class="btn" data-act="begin">开始测试</button>';
-    }
+    var saved = state.result ? '<button type="button" class="linkish" data-act="saved">查看上次结果</button>' : "";
+    var dims = window.BIZ_AXES.map(function (ax, i) {
+      var pair = POLE_LETTER[ax.key];
+      return '<p class="axis-kicker">维度' + DIM_NO[i] + ' · ' + esc(ax.name) + '</p>' +
+        '<div class="pole"><b><em>' + pair[0] + '</em>' + esc(ax.high) + '</b><p>' + esc(ax.highStory) + '</p></div>' +
+        '<div class="pole"><b><em>' + pair[1] + '</em>' + esc(ax.low) + '</b><p>' + esc(ax.lowStory) + '</p></div>';
+    }).join("");
+    var quick = planCard("30", {
+      kind: "quick",
+      name: "快速版",
+      time: "约 8 分钟",
+      count: "30 题",
+      desc: "先看清四个字母偏向哪一侧。适合想马上有个答案的人。",
+      cta: "开始快速版",
+      btn: "pink"
+    });
+    var full = planCard("60", {
+      kind: "full",
+      name: "完整版",
+      badge: "推荐",
+      time: "约 18 分钟",
+      count: "60 题",
+      desc: "工作、热爱和闪光点都问到。原型和变现方向更稳。",
+      cta: "开始完整版",
+      btn: ""
+    });
     return '<section class="home' + (ui.preview ? "" : " step") + '">' +
-      '<p class="brand">商业定位</p>' +
-      '<div class="appicon">16</div>' +
-      '<h1>测测你的<br>商业原型</h1>' +
-      '<p class="sub">60 道题，从做事方式、内在驱动和别人眼中的你，得到一个四字母定位，以及适合的变现方向。</p>' +
-      '<div class="pills"><span>约 20 分钟</span><span>16 种原型</span><span>没有对错</span></div>' +
-      '<div class="quad">' +
-        '<div><small>价值输出</small><b>建造 / 连接</b></div>' +
-        '<div><small>驱动能量</small><b>使命 / 市场</b></div>' +
-        '<div><small>能力杠杆</small><b>深度 / 广度</b></div>' +
-        '<div><small>交付节奏</small><b>快试 / 深耕</b></div>' +
+      '<div class="hero">' +
+        '<div class="hero-copy">' +
+          '<p class="brand">商业人格测试</p>' +
+          '<h1>你是<br>哪一种？</h1>' +
+          '<p class="sub">四个字母，十六种原型。看清你靠什么创造价值。</p>' +
+        '</div>' +
+        '<img class="cast" src="img/cast.svg" alt="" width="150" height="168">' +
       '</div>' +
-      '<div class="home-actions">' + buttons +
-      '<p class="fine">按真实的你作答。结果只存在这台设备上。</p></div>' +
+      '<div class="home-sheet">' +
+        '<h2 class="pick">选择适合你的版本</h2>' +
+        quick + full + saved +
+        '<section class="intro"><h2>这测的是什么</h2>' +
+          '<p>很多人知道自己能干活，却说不清价值从哪一段产生。这份测试把这件事收成四个字母，合成 16 种商业人格中的一种。</p>' +
+          '<p>它看三件事：你已经怎么交付，没有考核时你会被什么吸住，以及别人会为什么来找你。靠近中间的轴会标成摇摆。</p></section>' +
+        '<section class="intro"><h2>四个维度</h2>' +
+          '<p class="intro-lead">每一维都是两侧，没有好坏。结果页上的字母，就是更明显的那一侧。</p>' + dims + '</section>' +
+        '<section class="intro"><h2>你会得到</h2><ul class="points">' +
+          '<li>一个四字母原型，和一句能拿走用的定位</li>' +
+          '<li>四条轴各自更偏向哪一侧</li>' +
+          '<li>商业能力、优势、盲区，以及适合的战场</li>' +
+          '<li>按你的身份写的变现方向，和接下来两周可以做的三件事</li></ul></section>' +
+        '<section class="intro"><h2>作答须知</h2><ul class="points">' +
+          '<li>没有标准答案。选更像真实的你的那一项</li>' +
+          '<li>排序题按最像、其次、不像来点。程度题凭第一反应</li>' +
+          '<li>答到一半可以离开，进度留在这台设备上</li></ul></section>' +
+      '</div>' +
       confirmHtml() +
     '</section>';
   }
@@ -330,8 +384,8 @@
   function renderSection(step) {
     var sec = step.section;
     return qChrome({
-      meta: answeredCount() + " / 60",
-      progress: answeredCount() / 60 * 100,
+      meta: answeredCount() + " / " + ((state.order && state.order.length) || 60),
+      progress: answeredCount() / ((state.order && state.order.length) || 60) * 100,
       kicker: esc(sec.kicker),
       title: esc(sec.title),
       help: esc(sec.desc),
@@ -342,18 +396,19 @@
 
   function renderQuestion(step) {
     var q = qmap[step.id];
+    var total = state.order.length;
     var pos = state.order.indexOf(q.id) + 1;
     var help = q.type === "rank" ? "按顺序点：最像 → 其次 → 不像。点已选项可以重选。" : (q.type === "single" ? "点一下进入下一题。" : "凭第一反应。点一下进入下一题。");
     var body = q.type === "likert" ? likertHtml(q) : optionsHtml(q);
-    var last = pos === 60;
+    var last = pos === total;
     var foot = "";
     if (q.type === "rank") {
       foot = '<div class="qfoot"><button type="button" class="btn" data-act="next"' + (isAnswered(q) ? "" : " disabled") + '>' + (last ? "看结果" : "下一题") + '</button></div>';
     }
     var intro = step.indexInSection === 0 ? '<p class="qsec">' + esc(step.section.desc) + '</p>' : "";
     return qChrome({
-      meta: pos + " / 60",
-      progress: pos / 60 * 100,
+      meta: pos + " / " + total,
+      progress: pos / total * 100,
       kicker: esc(step.section.kicker + " · " + step.section.title),
       intro: intro,
       title: esc(q.prompt),
@@ -418,6 +473,9 @@
     else if (result.mixed) banners += '<p class="banner calm">有两条以上的轴靠近中间，单一原型会把你说窄。三张都读一读，看哪段更像你最近三年，而不是理想中的自己。</p>';
     if ((profile.years === 0 || profile.years === 1) && profile.audience !== "newbie") {
       banners += '<p class="banner calm">实践年限还不长。这里的「资产」指已经露出来的倾向，不是攒下的客户和作品。把它当方向。</p>';
+    }
+    if (!ephemeral && state.form === "30") {
+      banners += '<p class="banner calm">这是 30 题快速版，四个字母的方向可以看。想把变现方向看稳一些，可以再做 60 题完整版。</p>';
     }
     var switcher = "";
     if (result.mixed) {
@@ -517,7 +575,8 @@
 
   function confirmHtml() {
     if (!ui.confirmRetake) return "";
-    return '<div class="mask" data-act="cancel-retake"><div class="sheet" data-act="stop"><h2>重新测试</h2><p>这次作答会清空。如果已有结果，会留下一份和上次的对比。</p><button type="button" class="btn" data-act="retake-yes">清空并重测</button><button type="button" class="btn ghost" data-act="cancel-retake">取消</button></div></div>';
+    var which = ui.pendingForm === "30" ? "30 题快速版" : "60 题完整版";
+    return '<div class="mask" data-act="cancel-retake"><div class="sheet" data-act="stop"><h2>换成' + which + '</h2><p>当前作答会清空。如果已有结果，会留下一份和上次的对比。</p><button type="button" class="btn" data-act="retake-yes">清空并开始</button><button type="button" class="btn ghost" data-act="cancel-retake">取消</button></div></div>';
   }
 
   function shareCopy(arch, profile, result) {
@@ -702,11 +761,20 @@
     render({ keepScroll: true });
   }
 
-  function begin() {
-    ui.profileStep = 0;
-    ui.resumeAt = 0;
+  function launch(form) {
+    state.form = form === "30" ? "30" : "60";
+    state.order = null;
+    state.display = {};
+    state.answers = {};
+    state.result = null;
     state.screen = "flow";
     state.cursor = 1;
+    ui.profileStep = 0;
+    ui.resumeAt = 0;
+    ui.confirmRetake = false;
+    ui.pendingForm = "";
+    ephemeral = null;
+    clearHash();
     save();
     render();
   }
@@ -753,14 +821,17 @@
   }
 
   function startOrder() {
+    var pool = {};
+    formIds(state.form || "60").forEach(function (id) { pool[id] = 1; });
     var order = [];
     window.BIZ_SECTIONS.forEach(function (sec) {
-      var ids = window.BIZ_QUESTIONS.filter(function (q) { return q.section === sec.id; }).map(function (q) { return q.id; });
+      var ids = window.BIZ_QUESTIONS.filter(function (q) { return q.section === sec.id && pool[q.id]; }).map(function (q) { return q.id; });
       order = order.concat(shuffle(ids));
     });
     var display = {};
-    window.BIZ_QUESTIONS.forEach(function (q) {
-      if (q.type !== "likert") display[q.id] = shuffle([0, 1, 2]);
+    order.forEach(function (id) {
+      var q = qmap[id];
+      if (q && q.type !== "likert") display[id] = shuffle([0, 1, 2]);
     });
     state.order = order;
     state.display = display;
@@ -884,8 +955,8 @@
       if (token !== ui.token) return;
       var missing = null;
       var list = steps();
-      window.BIZ_QUESTIONS.forEach(function (q) {
-        if (!missing && !isAnswered(q)) missing = q.id;
+      (state.order || []).forEach(function (id) {
+        if (!missing && qmap[id] && !isAnswered(qmap[id])) missing = id;
       });
       if (missing) {
         for (var n = 0; n < list.length; n++) {
@@ -897,7 +968,7 @@
         return;
       }
       try {
-        state.result = ENGINE.scoreAttempt(state.answers);
+        state.result = ENGINE.scoreAttempt(state.answers, state.order);
         state.result.at = Date.now();
         state.screen = "result";
         ui.selectedCode = state.result.code;
@@ -912,6 +983,7 @@
   }
 
   function doRetake() {
+    var form = ui.pendingForm || state.form || "60";
     if (state.result) {
       state.prev = {
         scores: state.result.scores,
@@ -920,19 +992,7 @@
         at: state.result.at || Date.now()
       };
     }
-    state.order = null;
-    state.display = {};
-    state.answers = {};
-    state.result = null;
-    state.screen = "flow";
-    state.cursor = 1;
-    ui.confirmRetake = false;
-    ui.profileStep = 0;
-    ui.resumeAt = 0;
-    ephemeral = null;
-    clearHash();
-    save();
-    render();
+    launch(form);
   }
 
   function sameResult(a, scores, name) {
@@ -942,6 +1002,7 @@
 
   function boot() {
     state = load();
+    if (state && !state.form) state.form = state.order && state.order.length === 30 ? "30" : (state.order ? "60" : "");
     var hash = location.hash || "";
     if (hash.indexOf("#demo=") === 0) {
       var code = hash.slice(6, 10);
@@ -1014,7 +1075,19 @@
     if (!btn) return;
     var act = btn.getAttribute("data-act");
     if (act === "stop") { e.stopPropagation(); return; }
-    if (act === "begin") return begin();
+    if (act === "begin") return launch("60");
+    if (act === "start") {
+      var form = btn.getAttribute("data-form") === "30" ? "30" : "60";
+      var same = state.form === form && state.order && !state.result && answeredCount() > 0;
+      if (same) return resume();
+      var dirty = (state.order && answeredCount() > 0) || !!state.result;
+      if (dirty) {
+        ui.pendingForm = form;
+        ui.confirmRetake = true;
+        return render({ keepScroll: true });
+      }
+      return launch(form);
+    }
     if (act === "resume") return resume();
     if (act === "saved") return showSaved();
     if (act === "self") return goCover();
@@ -1063,9 +1136,11 @@
       ui.shareOpen = false;
       ui.cardOpen = false;
       ui.confirmRetake = false;
+      ui.pendingForm = "";
       return render({ keepScroll: true });
     }
     if (act === "restart") {
+      ui.pendingForm = state.form || "60";
       ui.confirmRetake = true;
       return render({ keepScroll: true });
     }

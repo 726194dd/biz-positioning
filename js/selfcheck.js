@@ -121,6 +121,19 @@ codes.forEach(function (code) {
   });
 });
 
+var shortAnswers = {};
+globalThis.BIZ_SHORT.forEach(function (id) { shortAnswers[id] = E.poleAAnswers()[id]; });
+var shortHigh = E.scoreAttempt(shortAnswers, globalThis.BIZ_SHORT);
+assert(globalThis.BIZ_SHORT.length === 30, "short count");
+assert(shortHigh.code === "BMDF", "short pole A " + shortHigh.code);
+var shortLowAns = {};
+globalThis.BIZ_SHORT.forEach(function (id) { shortLowAns[id] = E.poleBAnswers()[id]; });
+var shortLow = E.scoreAttempt(shortLowAns, globalThis.BIZ_SHORT);
+assert(shortLow.code === "CKGS", "short pole B " + shortLow.code);
+var axisCount = { A: 0, B: 0, C: 0, D: 0 };
+globalThis.BIZ_SHORT.forEach(function (id) { axisCount[ids[id].axis] += 1; });
+assert(axisCount.A === 8 && axisCount.B === 8 && axisCount.C === 7 && axisCount.D === 7, "short axes " + JSON.stringify(axisCount));
+
 console.log("selfcheck ok");
 console.log("poleA", high.code, JSON.stringify(high.scores), "contradictions", high.contradictions);
 console.log("poleB", low.code, JSON.stringify(low.scores));

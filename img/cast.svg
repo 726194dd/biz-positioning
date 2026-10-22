@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 188" fill="none">
+  <ellipse cx="84" cy="168" rx="62" ry="12" fill="#F3C6E4" opacity=".55"/>
+  <circle cx="28" cy="36" r="8" fill="#FFD0E2"/>
+  <circle cx="146" cy="28" r="5" fill="#D9CCFF"/>
+  <circle cx="138" cy="58" r="3" fill="#FFB4CC"/>
+  <g>
+    <ellipse cx="48" cy="132" rx="22" ry="16" fill="#FF8AAB"/>
+    <circle cx="48" cy="104" r="18" fill="#FFF6F1"/>
+    <circle cx="42" cy="102" r="2" fill="#3A2A44"/>
+    <circle cx="54" cy="102" r="2" fill="#3A2A44"/>
+    <path d="M43 109c2.4 2.4 7.6 2.4 10 0" stroke="#3A2A44" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="38" cy="108" r="2.2" fill="#FFB3C7"/>
+    <circle cx="58" cy="108" r="2.2" fill="#FFB3C7"/>
+    <rect x="38" y="128" width="12" height="10" rx="2" fill="#FFF6F1"/>
+  </g>
+  <g>
+    <ellipse cx="118" cy="128" rx="22" ry="16" fill="#8ED9C7"/>
+    <circle cx="118" cy="100" r="18" fill="#FFF6F1"/>
+    <circle cx="112" cy="98" r="2" fill="#3A2A44"/>
+    <circle cx="124" cy="98" r="2" fill="#3A2A44"/>
+    <path d="M113 105c2.4 2.4 7.6 2.4 10 0" stroke="#3A2A44" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="108" cy="104" r="2.2" fill="#FFB3C7"/>
+    <circle cx="128" cy="104" r="2.2" fill="#FFB3C7"/>
+    <path d="M128 96c6 2 10 8 8 14" stroke="#5EBEA8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g>
+    <ellipse cx="84" cy="124" rx="26" ry="18" fill="#B79CFF"/>
+    <circle cx="84" cy="90" r="22" fill="#FFF6F1"/>
+    <circle cx="76" cy="88" r="2.2" fill="#3A2A44"/>
+    <circle cx="92" cy="88" r="2.2" fill="#3A2A44"/>
+    <path d="M77 96c3 3 11 3 14 0" stroke="#3A2A44" stroke-width="1.7" stroke-linecap="round"/>
+    <circle cx="70" cy="95" r="2.6" fill="#FFB3C7"/>
+    <circle cx="98" cy="95" r="2.6" fill="#FFB3C7"/>
+    <path d="M70 78c4-8 24-8 28 0" stroke="#B79CFF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <g>
+    <ellipse cx="84" cy="146" rx="16" ry="8" fill="#FFC56E"/>
+    <circle cx="84" cy="128" r="14" fill="#FFF6F1"/>
+    <circle cx="79" cy="127" r="1.7" fill="#3A2A44"/>
+    <circle cx="89" cy="127" r="1.7" fill="#3A2A44"/>
+    <path d="M80 132c1.6 1.6 6.4 1.6 8 0" stroke="#3A2A44" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+</svg>
